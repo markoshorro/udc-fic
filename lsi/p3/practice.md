@@ -1,6 +1,9 @@
 Practice 3: Backups and File Systems (Debian)
 =============================================
 
+### The original practice
+http://www.tic.udc.es/~nino/blog/lsi/prac-semi/lsi-practica3-rev-2013.pdf
+
 # Concepts
 
 Firstable, a FS is used to organize and store files in a device. There are several ways of doing this and, therefore, there are many types of filesystems, e.g. (Debian): ext2, ext3, ext4, jfs, xfs.
