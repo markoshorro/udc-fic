@@ -254,7 +254,77 @@ If we want to _deattach_ these partitions of our system, the actions are analogo
 
 ## Backups
 
-dump is a tool for ext2/3 backup. It determinates what needs to be saved. If we remember the first configuration file /etc/fstab, we can see column <dump>. All rows have 0 this field, because dump is not installed by default.
+dump is a tool for ext2/3/4 backup. It determinates what needs to be saved. If we remember the first configuration file /etc/fstab, we can see column <dump>. All rows have 0 this field, because dump is not installed by default.
+This tool has a lot of options. In our case, we just want to make a simple backup, so for making an initial backup we can type:
+
+    # dump -u0 -f <file> <file-to-back-up>
+
+The option -u updates the file /var/lib/dumpdates after a successful dump. -<level#> option, sets the dump level: 0 tells dump to backup the entire FS; a level number above copies all files new or modified since the last dump of a lower level.
+In our case, e.g, we could want to bakcup critical data in /dev/sdb1. Imagine we have something like this:
+
+    root@debian:/home/lsi# ls -al critical_data/
+    total 8
+    drwxr-xr-x  2 root root 4096 nov 18 22:48 .
+    drwxr-xr-x 29 lsi  lsi  4096 nov 18 22:47 ..
+    -rw-r--r--  1 root root    0 nov 18 22:48 data_important
+
+And a partition like:
+
+    ...
+    /dev/sdb1 on /mnt/backup1 type ext4 (rw)
+    ...
+    root@debian:/mnt/backup1# ls -al
+    total 17
+    drwxr-xr-x 3 root root  1024 nov 18 23:07 .
+    drwxr-xr-x 5 root root  4096 nov 18 22:46 ..
+    -rw-r--r-- 1 root root     0 nov 18 23:07 backup-test
+    drwx------ 2 root root 12288 nov 18 14:59 lost+found
+
+We can execute:
+
+    root@debian:/home/lsi# dump -0 -f /mnt/backup1/backup-test critical_data/
+    DUMP: Date of this level 0 dump: Tue Nov 18 23:09:53 2014
+    DUMP: Dumping /dev/sda1 (/ (dir home/lsi/critical_data)) to /mnt/backup1/backup-test
+    DUMP: Label: none
+    DUMP: Writing 10 Kilobyte records
+    DUMP: mapping (Pass I) [regular files]
+    DUMP: mapping (Pass II) [directories]
+    DUMP: estimated 150 blocks.
+    DUMP: Volume 1 started with block 1 at: Tue Nov 18 23:09:53 2014
+    DUMP: dumping (Pass III) [directories]
+    DUMP: dumping (Pass IV) [regular files]
+    DUMP: Closing /mnt/backup1/backup-test
+    DUMP: Volume 1 completed at: Tue Nov 18 23:09:53 2014
+    DUMP: Volume 1 140 blocks (0.14MB)
+    DUMP: 140 blocks (0.14MB) on 1 volume(s)
+    DUMP: finished in less than a second
+    DUMP: Date of this level 0 dump: Tue Nov 18 23:09:53 2014
+    DUMP: Date this dump completed:  Tue Nov 18 23:09:53 2014
+    DUMP: Average transfer rate: 0 kB/s
+    DUMP: DUMP IS DONE
+
+Now the backup is done, the analogous action is restore it. We can do it interactively:
+
+    root@debian:/home/lsi# restore -aif /mnt/backup1/backup-test 
+    restore >
+
+Pressing ? for help we get:
+
+    restore > ?
+    Available commands are:
+	    ls [arg] - list directory
+	    cd arg - change directory
+	    pwd - print current directory
+	    add [arg] - add `arg' to list of files to be extracted
+	    delete [arg] - delete `arg' from list of files to be extracted
+	    extract - extract requested files
+	    setmodes - set modes of requested directories
+	    quit - immediately exit program
+	    what - list dump header information
+	    verbose - toggle verbose flag (useful with ``ls'')
+	    prompt - toggle the prompt display
+	    help or `?' - print this list
+    If no `arg' is supplied, the current directory is used
 
 To be continued...
 
