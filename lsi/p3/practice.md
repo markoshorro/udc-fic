@@ -1,7 +1,7 @@
-Practice 3: Backups and File Systems (Debian, UNIX)
-===================================================
+Practice 3: Backups and File Systems (Debian)
+=============================================
 
-## Concepts
+# Concepts
 
 Firstable, a FS is used to organize and store files in a device. There are several ways of doing this and, therefore, there are many types of filesystems, e.g. (Debian): ext2, ext3, ext4, jfs, xfs.
 We can find information about our/s FS in our machine viewing some configuration files or typing some commands.
@@ -89,7 +89,7 @@ If we want to check all devices mounted on our machine:
     fusectl on /sys/fs/fuse/connections type fusectl (rw)
     binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,noexec,nosuid,nodev)
 
-## The practice
+# The practice
 
 We have answer the first question on the previous section, so we will continue with b).
 As it says and as we saw before, we have two disks with no partitions. To create new partitions we can use the partition manager command fdisk.
@@ -129,7 +129,7 @@ So this is an interactive partition manager. Typing m:
        w   Escribe la tabla en el disco y sale
        x   Funciones adicionales (sólo para usuarios avanzados)
 
-We are goint to create a new partition table on that disk, as follows:
+We are going to create a new partition table on that disk, as follows:
 
     root@debian:/home/lsi# fdisk /dev/sdb
     El dispositivo no contiene una tabla de particiones DOS válida ni una etiqueta de disco Sun o SGI o OSF
@@ -254,5 +254,7 @@ If we want to _deattach_ these partitions of our system, the actions are analogo
 
 ## Backups
 
-dump is a tool for ext2/3 backup. It determinates what needs to be saved.
+dump is a tool for ext2/3 backup. It determinates what needs to be saved. If we remember the first configuration file /etc/fstab, we can see column <dump>. All rows have 0 this field, because dump is not installed by default.
+
+To be continued...
 
