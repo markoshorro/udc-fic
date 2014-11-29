@@ -190,6 +190,25 @@ Then we can sign it with the CA certificate:
 Of course, the CA should keep carefully its private key to mantain authenticity.
 After all, _cert.pem_ is the file that certificates, by the CA (in this case, ourselves), that is me who emits that.
 
+## Apache2 and SSL
+==================
+
+We are meant to configure Apache so if we try to access to a concrete directory of the web hierarchy, we must use SSL and we authenticated.
+Firstable, and after setting up Apache (_apt-get install apache2..._), we create the mentioned directory and add a html file.
+Now, on any part of _/etc/apache2/apache2.conf_ file we paste a directive like this:
+
+    <Directory <path_to_secret_directory>>
+         SSLRequireSSL
+    </Directory>
+
+In example, my html pages are on _/var/www/_ and my private directory on _/var/www/private_, so:
+
+    <Directory /var/www/private>
+         SSLRequireSSL
+    </Directory>
+
+Restarting Apache service, you should notice that if you try to access from browser to _http://localhost/<whatever>/index.html_ fails, but with _https_ it does not.
+
 # openVPN
 =========
 
