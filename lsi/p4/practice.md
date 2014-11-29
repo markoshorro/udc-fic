@@ -1,6 +1,9 @@
 Practice 4: Secure protocols
 ============================
 
+# SSH
+=====
+
 SSH is a network protocol (Application layer) that allows to execute commands, exchange data, login and other network services between two machines.
 How it works? 
 
@@ -97,7 +100,7 @@ In example:
     total 0
     -rw-r--r-- 1 lsi lsi 0 nov 28 20:18 test-file
 
-c) The authorized\_keys file on .ssh directory is used by sshd daemon to check if any of the hosts' given keys matches with any entry of this mentioned file.
+c) The authorized\_keys file on .ssh directory is used by sshd daemon to check if any of the given hosts' keys matches with any entry of this mentioned file.
 So in the server, if allow _PubkeyAuthentication_ on _sshd\_config_ file and we add an entry on _authorized\_keys_ with a public key generated on our machine and saved on .ssh/, we will not need password to authenticate.
 
     $ keygen -t rsa
@@ -136,6 +139,65 @@ Following this steps, on next login, the output with _-vvv_, on some part should
     debug1: Authentication succeeded (publickey).
     Authenticated to IP ([IP]:22).
     ...
+
+d) If we want to securize a protocol that it is not, we can make a SSH Tunnel with it. So what we are doing is redirect all this traffic through an SSH connection, tunneling.
+-L option specifies local port forwarding. For the duration of the SSH session, pointing your browser at http://localhost:8080/ would send you to http://www.ubuntuforums.org/
+
+    $ ssh -L 8080:www.canonical.com:80 -f <host> -Nv
+
+Where _<host>_ is your own machine, _-N_ executes none commands and _-v_ shows some information about the tunnel created.
+
+e) Setting tcpwrappers or iptables we can control who is able to connect to our machine
+
+# Certification Authority (CA)
+==============================
+
+Firstable we are going to configure a Certification Authority (CA) in our system. We are going to use GnuTLS instead of OpenSSL, because using GnuTLS avoids the licensing issues that can arise from employing the more common OpenSSL package.
+So, we start the process creating setting up a CA:
+
+    $ certtool --generate-privkey --outfile ca-key.pem
+    $ certtool --generate-self-signed --load-privkey ca-key.pem --outfile ca-cert.pem
+
+The _ca-keyname_ will be used to sign the certificates we want.
+Now, if we want to create our certificate, we first generate our private key to certificate and then we create a request to be signed:
+
+    $ certtool --generate-privkey --outfile key.pem
+    $ certtool --generate-request --load-privkey key.pem --outfile request.pem
+    Generating a PKCS #10 certificate request...
+    Country name (2 chars): es
+    Organization name: markoshorro
+    Organizational unit name: mk
+    Locality name: house
+    State or province name: house
+    Common name: markoshorro
+    UID: 11
+    Enter a dnsName of the subject of the certificate: 
+    Enter the IP address of the subject of the certificate: 
+    Enter the e-mail of the subject of the certificate: 
+    Enter a challenge password: 
+    Does the certificate belong to an authority? (y/N): n
+    Will the certificate be used for signing (DHE and RSA-EXPORT ciphersuites)? (y/N): n
+    Will the certificate be used for encryption (RSA ciphersuites)? (y/N): y
+    Is this a TLS web client certificate? (y/N): y
+    Is this also a TLS web server certificate? (y/N): y
+
+Then we can sign it with the CA certificate:
+
+    $ certtool --generate-certificate --load-request request.pem \
+               --outfile cert.pem --load-ca-certificate ca-cert.pem \
+               --load-ca-privkey ca-key.pem
+
+Of course, the CA should keep carefully its private key to mantain authenticity.
+After all, _cert.pem_ is the file that certificates, by the CA (in this case, ourselves), that is me who emits that.
+
+# openVPN
+=========
+
+References
+==========
+GnuTLS - http://www.gnutls.org/manual/html_node/certtool-Invocation.html, https://help.ubuntu.com/community/GnuTLS
+SSH - http://unixhelp.ed.ac.uk/CGI/man-cgi?ssh+1
+
 
 
 
