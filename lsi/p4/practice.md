@@ -235,7 +235,7 @@ Client (for the record, we saved this file on _/etc/openvpn/client.conf_):
     ifconfig 10.8.0.2 10.8.0.1
     secret sekret.key
 
-Where _sekret.key_ is generated after the connection by: _openvpn --genkey --secret sekret.key_.
+Where _sekret.key_ is generated before the connection by: _openvpn --genkey --secret sekret.key_.
 Once machines are configurated, they only have to run their configurations:
 
     $ openvpn --config <path_to_config_file>
