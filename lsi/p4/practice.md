@@ -1,6 +1,8 @@
 Practice 4: Secure protocols
 ============================
 
+[Práctica original:] http://www.tic.udc.es/~nino/blog/lsi/prac-semi/lsi-practica4-rev-2012.pdf
+
 # SSH
 =====
 
@@ -145,9 +147,13 @@ d) If we want to securize a protocol that it is not, we can make a SSH Tunnel wi
 
     $ ssh -L 8080:www.canonical.com:80 -f <host> -Nv
 
-Where _<host>_ is your own machine, _-N_ executes none commands and _-v_ shows some information about the tunnel created.
+Where _host_ is your own machine, _-N_ executes none commands and _-v_ shows some information about the tunnel created.
 
-e) Setting tcpwrappers or iptables we can control who is able to connect to our machine
+e) Going further, on _sshd\_config_ you can add _AllowUsers_ to limit access to specific IP addresses for specific users, e.g.:
+
+    AllowUsers root@10.10.102.172 lsi@10.*
+
+In this case, _root_ could only log in over 10.10.102.172 IP and lsi from any 10.X.X.X IP
 
 # Certification Authority (CA)
 ==============================
@@ -212,11 +218,64 @@ Restarting Apache service, you should notice that if you try to access from brow
 # openVPN
 =========
 
+Basically, VPN extends a private network through Internet.
+A simple way to create a tunnel with openVPN is to configurate a server endpoint and a client endpoint.
+Server (for the record, we saved this file on _/etc/openvpn/server.conf_):
+
+    # Server configuration
+    dev tun0
+    ifconfig 10.8.0.1 10.8.0.2
+    secret sekret.key
+
+Client (for the record, we saved this file on _/etc/openvpn/client.conf_):
+
+    # Client configuration
+    remote <ip\_server>
+    dev tun0
+    ifconfig 10.8.0.2 10.8.0.1
+    secret sekret.key
+
+Where _sekret.key_ is generated after the connection by: _openvpn --genkey --secret sekret.key_.
+Once machines are configurated, they only have to run their configurations:
+
+    $ openvpn --config <path_to_config_file>
+    Mon Dec  1 19:06:31 2014 OpenVPN 2.1.3 x86_64-pc-linux-gnu [SSL] [LZO2] [EPOLL] [PKCS11] [MH] [PF_INET6] [eurephia] built on Jun  4 2013
+    Mon Dec  1 19:06:31 2014 IMPORTANT: OpenVPN's default port number is now 1194, based on an official port number assignment by IANA.  OpenVPN 2.0-beta16 and earlier used 5000 as the default port.
+    Mon Dec  1 19:06:31 2014 NOTE: OpenVPN 2.1 requires '--script-security 2' or higher to call user-defined scripts or executables
+    Mon Dec  1 19:06:31 2014 /usr/sbin/openvpn-vulnkey -q /etc/openvpn/private/braismarkos.key
+    Mon Dec  1 19:06:31 2014 TUN/TAP device tun0 opened
+    Mon Dec  1 19:06:31 2014 /sbin/ifconfig tun0 10.8.0.1 pointopoint 10.8.0.2 mtu 1500
+    Mon Dec  1 19:06:31 2014 UDPv4 link local (bound): [undef]
+    Mon Dec  1 19:06:31 2014 UDPv4 link remote: [undef]
+    Mon Dec  1 19:08:35 2014 Peer Connection Initiated with [AF_INET]<THE_CLIENT_REAL_IP>:1194
+    Mon Dec  1 19:08:36 2014 Initialization Sequence Completed
+
+This should work. You can see the interfaces configurations (_ifconfig_):
+
+          ...
+          tun0      Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  
+                    inet addr:10.8.0.1  P-t-P:10.8.0.2  Mask:255.255.255.255
+                    UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
+                    RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+                    TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+                    collisions:0 txqueuelen:100 
+                    RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+          ...
+
+Testing ping:
+
+    root@debian:/home/lsi# ping 10.8.0.2
+    PING 10.8.0.2 (10.8.0.2) 56(84) bytes of data.
+    64 bytes from 10.8.0.2: icmp_req=1 ttl=64 time=0.665 ms
+    64 bytes from 10.8.0.2: icmp_req=2 ttl=64 time=0.584 ms
+    64 bytes from 10.8.0.2: icmp_req=3 ttl=64 time=0.521 ms
+    
+
 References
 ==========
 GnuTLS - http://www.gnutls.org/manual/html_node/certtool-Invocation.html, https://help.ubuntu.com/community/GnuTLS
 SSH - http://unixhelp.ed.ac.uk/CGI/man-cgi?ssh+1
-
+openVPN - http://openvpn.net/index.php/open-source/documentation/miscellaneous/78-static-key-mini-howto.html
 
 
 
