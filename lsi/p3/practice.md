@@ -265,50 +265,54 @@ This tool has a lot of options. In our case, we just want to make a simple backu
 The option -u updates the file /var/lib/dumpdates after a successful dump. -<level#> option, sets the dump level: 0 tells dump to backup the entire FS; a level number above copies all files new or modified since the last dump of a lower level.
 In our case, e.g, we could want to bakcup critical data in /dev/sdb1. Imagine we have something like this:
 
-    root@debian:/home/lsi# ls -al critical_data/
+    root@debian:/home/lsi/dump-restore/critical_data# ls -al
     total 8
-    drwxr-xr-x  2 root root 4096 nov 18 22:48 .
-    drwxr-xr-x 29 lsi  lsi  4096 nov 18 22:47 ..
-    -rw-r--r--  1 root root    0 nov 18 22:48 data_important
-
-And a partition like:
-
-    ...
-    /dev/sdb1 on /mnt/backup1 type ext4 (rw)
-    ...
-    root@debian:/mnt/backup1# ls -al
-    total 17
-    drwxr-xr-x 3 root root  1024 nov 18 23:07 .
-    drwxr-xr-x 5 root root  4096 nov 18 22:46 ..
-    -rw-r--r-- 1 root root     0 nov 18 23:07 backup-test
-    drwx------ 2 root root 12288 nov 18 14:59 lost+found
-
+    drwxr-xr-x 2 root root 4096 dic 16 14:23 .
+    drwxr-xr-x 3 root root 4096 dic 16 14:22 ..
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file1
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file2
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file3
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file40
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file41
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file42
+    
 We can execute:
 
-    root@debian:/home/lsi# dump -0 -f /mnt/backup1/backup-test critical_data/
-    DUMP: Date of this level 0 dump: Tue Nov 18 23:09:53 2014
-    DUMP: Dumping /dev/sda1 (/ (dir home/lsi/critical_data)) to /mnt/backup1/backup-test
+    root@debian:/home/lsi/dump-restore# dump -0a -f /home/lsi/dump-restore/back.dump critical_data/
+    DUMP: Date of this level 0 dump: Tue Dec 16 14:24:08 2014
+    DUMP: Dumping /dev/sda1 (/ (dir home/lsi/dump-restore/critical_data)) to /home/lsi/dump-restore/back.dump
     DUMP: Label: none
     DUMP: Writing 10 Kilobyte records
     DUMP: mapping (Pass I) [regular files]
     DUMP: mapping (Pass II) [directories]
-    DUMP: estimated 150 blocks.
-    DUMP: Volume 1 started with block 1 at: Tue Nov 18 23:09:53 2014
+    DUMP: estimated 158 blocks.
+    DUMP: Volume 1 started with block 1 at: Tue Dec 16 14:24:08 2014
     DUMP: dumping (Pass III) [directories]
     DUMP: dumping (Pass IV) [regular files]
-    DUMP: Closing /mnt/backup1/backup-test
-    DUMP: Volume 1 completed at: Tue Nov 18 23:09:53 2014
-    DUMP: Volume 1 140 blocks (0.14MB)
-    DUMP: 140 blocks (0.14MB) on 1 volume(s)
+    DUMP: Closing /home/lsi/dump-restore/back.dump
+    DUMP: Volume 1 completed at: Tue Dec 16 14:24:08 2014
+    DUMP: Volume 1 150 blocks (0.15MB)
+    DUMP: 150 blocks (0.15MB) on 1 volume(s)
     DUMP: finished in less than a second
-    DUMP: Date of this level 0 dump: Tue Nov 18 23:09:53 2014
-    DUMP: Date this dump completed:  Tue Nov 18 23:09:53 2014
+    DUMP: Date of this level 0 dump: Tue Dec 16 14:24:08 2014
+    DUMP: Date this dump completed:  Tue Dec 16 14:24:08 2014
     DUMP: Average transfer rate: 0 kB/s
     DUMP: DUMP IS DONE
 
-Now the backup is done, the analogous action is restore it. We can do it interactively:
+Now the backup is done, the analogous action is restore it. We are going to remove some files of the folder:
 
-    root@debian:/home/lsi# restore -aif /mnt/backup1/backup-test 
+    root@debian:/home/lsi/dump-restore# rm -R critical_data/file4*
+    root@debian:/home/lsi/dump-restore# ls -al critical_data/
+    total 8
+    drwxr-xr-x 2 root root 4096 dic 16 14:26 .
+    drwxr-xr-x 3 root root 4096 dic 16 14:24 ..
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file1
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file2
+    -rw-r--r-- 1 root root    0 dic 16 14:23 file3
+
+To restore them:
+
+    root@debian:/home/lsi/dump-restore# restore -i -f /home/lsi/dump-restore/back.dump
     restore >
 
 Pressing ? for help we get:
@@ -329,5 +333,71 @@ Pressing ? for help we get:
 	    help or `?' - print this list
     If no `arg' is supplied, the current directory is used
 
-To be continued...
+So, we can select the files to extract from the backup:
+
+    restore > cd home/lsi/dump-restore/critical_data
+    restore > ls
+    ./home/lsi/dump-restore/critical_data:
+    file1  file2  file3  file40 file41 file42
+    
+    restore > add file4*
+    restore > ls
+    ./home/lsi/dump-restore/critical_data:
+    file1   file2   file3  *file40 *file41 *file42
+    restore > quit
+
+Now we have the restored files:
+
+    root@debian:/home/lsi/dump-restore# ls home/lsi/dump-restore/critical_data/file4*
+    home/lsi/dump-restore/critical_data/file40  home/lsi/dump-restore/critical_data/file41	home/lsi/dump-restore/critical_data/file42
+
+## Crontab and backup
+
+The crontab configuration file, can be found at _/etc/crontab_. The content of it should be something like:
+
+    # /etc/crontab: system-wide crontab
+    # Unlike any other crontab you don't have to run the `crontab'
+    # command to install the new version when you edit this file
+    # and files in /etc/cron.d. These files also have username fields,
+    # that none of the other crontabs do.
+    
+    SHELL=/bin/sh
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    
+    # m h dom mon dow user  command
+    17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+    25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+    47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+    52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+    #
+
+So, to make a new rule, we can add a line like this:
+
+    * * * * *       root    dump -0a -f /home/lsi/dump-restore/back.dump critical_data/ # every minute
+
+This rule would make a dump every minute, so, to make it more realistic we are going to make this command be executed once a week:
+
+    0 0 * * 0       root    dump -0a -f /home/lsi/dump-restore/back.dump critical_data/ # every Sunday at 00:00h
+
+## rsync and ssh tunneling
+
+rsync can be used to backup files to/from remote hosts or to/from local host, e.g., to sincronize two directories between two machines on a net using rsync:
+
+    rsync -av --delete -e ssh [user@]host:SRC... [DEST]
+
+Or
+
+    rsync -av --delete -e ssh SRC... [user@]host:DEST
+
+_-a_ option, basically, conserves copied files as originals, as archives; _-e_ option specify the remote shell to use; _SRC_ and _DST_ are paths to directories/files.
+
+## Mount remote Linux directory via ssh tunneling
+
+SSHFS is a tool capable of operating on files on a remote computer using just a secure shell login on the remote computer (literally from man page). It is quite simple to use:
+
+    $ sshfs username@server:/remotefolder /remote
+
+So, _/remotefolder_ is mounted at local directory _~/remote_. We can also unmount:
+
+    $ fusermount -u /remote
 
