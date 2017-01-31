@@ -39,11 +39,16 @@ def intersect_sphere(O, D, S, R):
             return t1 if t0 < 0 else t0
     return np.inf
 
+def intersect_triangle(O, D, P, N):
+    return 0
+
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
         return intersect_plane(O, D, obj['position'], obj['normal'])
     elif obj['type'] == 'sphere':
         return intersect_sphere(O, D, obj['position'], obj['radius'])
+    elif obj['type'] == 'triangle':
+        return intersect_triangle(O, D, obj['position'], obj['normal'])
 
 def get_normal(obj, M):
     # Find normal.
@@ -94,13 +99,32 @@ def trace_ray(rayO, rayD):
 def add_sphere(position, radius, color):
     return dict(type='sphere', position=np.array(position), 
         radius=np.array(radius), color=np.array(color), reflection=.5)
-    
+
 def add_plane(position, normal):
     return dict(type='plane', position=np.array(position), 
         normal=np.array(normal),
         color=lambda M: (color_plane0 
             if (int(M[0] * 2) % 2) == (int(M[2] * 2) % 2) else color_plane1),
         diffuse_c=.75, specular_c=.5, reflection=.25)
+
+# new geometry
+def add_triangle(v1, v2, v3, color):
+    # with the point, we calculate the normal vector
+    u = np.subtract(v3,v1)
+    v = np.subtract(v2,v1)
+    n = np.cross(u,v)
+
+    return dict(type='triangle', position=np.array([v1,v2,v3]),
+                color=np.array(color), reflection=.5, normal=n)
+
+def add_triangle_mesh(P, color):
+    mesh = []
+    i = 2
+    
+    while i<len(P):
+        mesh = [mesh] + [[add_triangle(P[i], P[i+1], P[i+2], color)]]
+    
+    return mesh
     
 # List of objects.
 color_plane0 = 1. * np.ones(3)
