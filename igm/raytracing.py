@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -12,7 +14,7 @@ def intersect_plane(O, D, P, N):
     # Return the distance from O to the intersection of the ray (O, D) with the 
     # plane (P, N), or +inf if there is no intersection.
     # O and P are 3D points, D and N (normal) are normalized vectors.
-    denom = np.dot(D, N)
+    denom = np.dot(D,+  N)
     if np.abs(denom) < 1e-6:
         return np.inf
     d = np.dot(P - O, N) / denom
@@ -39,19 +41,34 @@ def intersect_sphere(O, D, S, R):
             return t1 if t0 < 0 else t0
     return np.inf
 
-def intersect_triangle(O, D, P, N):
-    e2 = np.subtract(P[2],P[0])
-    e1 = np.subtract(P[1],P[0])
-    s = np.subtract(O,P[0])
-    p = np.cross(D,e2)
-    a = np.dot(p, e1)
-    f = 1/a
-    u = f * (np.dot(p,s))
-
-    if (u<0) or (u>1):
+def ray_triangle_intersection(ray_near, ray_dir, (v1, v2, v3)):
+    """
+    Möller–Trumbore intersection algorithm in pure python
+    Based on http://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+    """
+    eps = 0.000001
+    edge1 = v2 - v1
+    edge2 = v3 - v1
+    pvec = np.cross(ray_dir, edge2)
+    det = edge1.dot(pvec)
+    if abs(det) < eps:
         return np.inf
-    
-    return 1.
+    inv_det = 1. / det
+    tvec = ray_near - v1
+    u = tvec.dot(pvec) * inv_det
+    if u < 0. or u > 1.:
+        return np.inf
+    qvec = np.cross(tvec, edge1)
+    v = ray_dir.dot(qvec) * inv_det
+    if v < 0. or u + v > 1.:
+        return np.inf
+
+    t = edge2.dot(qvec) * inv_det
+    if t < eps:
+        return np.inf
+
+    return t
+
 
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
@@ -59,13 +76,13 @@ def intersect(O, D, obj):
     elif obj['type'] == 'sphere':
         return intersect_sphere(O, D, obj['position'], obj['radius'])
     elif obj['type'] == 'triangle':
-        return intersect_triangle(O, D, obj['position'], obj['normal'])
+        return ray_triangle_intersection(O, D, obj['position'])
 
 def get_normal(obj, M):
     # Find normal.
     if obj['type'] == 'sphere':
         N = normalize(M - obj['position'])
-    elif obj['type'] == 'plane':
+    elif obj['type'] == 'plane' or obj['type'] == 'triangle':
         N = obj['normal']
     return N
     
@@ -92,21 +109,25 @@ def trace_ray(rayO, rayD):
     # Find properties of the object.
     N = get_normal(obj, M)
     color = get_color(obj, M)
-    toL = normalize(L - M)
-    toO = normalize(O - M)
-    # Shadow: find if the point is shadowed or not.
-    l = [intersect(M + N * .0001, toL, obj_sh) 
-            for k, obj_sh in enumerate(scene) if k != obj_idx]
-    if l and min(l) < np.inf:
-        return
-    # Start computing the color.
+    i=0
     col_ray = ambient
-    # Lambert shading (diffuse).
-    col_ray += obj.get('diffuse_c', diffuse_c) * max(np.dot(N, toL), 0) * color
-    # Blinn-Phong shading (specular).
-    col_ray += obj.get('specular_c', specular_c) * max(np.dot(N, normalize(toL + toO)), 0) ** specular_k * color_light
+    for light in L:
+        toL = normalize(light - M)
+        toO = normalize(O - M)
+        # Shadow: find if the point is shadowed or not.
+        l = [intersect(M + N * .0001, toL, obj_sh) 
+                for k, obj_sh in enumerate(scene) if k != obj_idx]
+        if l and min(l) < np.inf:
+            pass;
+        else:
+            # Start computing the color.
+            #col_ray = ambient
+            # Lambert shading (diffuse).
+            col_ray += obj.get('diffuse_c', diffuse_c) * max(np.dot(N, toL), 0) * color
+            # Blinn-Phong shading (specular).
+            col_ray += obj.get('specular_c', specular_c) * max(np.dot(N, normalize(toL + toO)), 0) ** specular_k * color_light[i]
+        i = i + 1
     return obj, M, N, col_ray
-
 def add_sphere(position, radius, color):
     return dict(type='sphere', position=np.array(position), 
         radius=np.array(radius), color=np.array(color), reflection=.5)
@@ -121,34 +142,45 @@ def add_plane(position, normal):
 # new geometry
 def add_triangle(v1, v2, v3, color):
     # with the point, we calculate the normal vector
-    u = np.subtract(v3,v1)
-    v = np.subtract(v2,v1)
+    u = np.subtract(v2,v1)
+    v = np.subtract(v3,v1)
     n = np.cross(u,v)
 
     return dict(type='triangle', position=np.array([v1,v2,v3]),
                 color=np.array(color), reflection=.5, normal=n)
 
 def add_triangle_mesh(P, color):
-    mesh = []
-    i = 2
+    mesh = add_triangle(P[0], P[1], P[2], color)
+    i = 3
     
     while i<len(P):
-        mesh = [mesh] + [[add_triangle(P[i], P[i+1], P[i+2], color)]]
+        mesh = mesh, add_triangle(P[i], P[i-1], P[i-2], color)
+        i += 1
     
     return mesh
     
 # List of objects.
 color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
-scene = [add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-         add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+triangles = add_triangle_mesh([[-1.,-0.5,1],[-0.5,0.5,1],[0.,-0.5,1],[0.5,0.5,1]],[0.,1.0,0.])
+scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
+         #add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
          add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
-    ]
+]
+
+if type(triangles)!=dict:
+    for i in triangles:
+        scene += [i]
+else:
+    scene += [triangles]
+        
+
+print scene
 
 # Light position and color.
-L = np.array([5., 5., -10.])
-color_light = np.ones(3)
+L = np.array([[7., 3., -10.],[-8.,7.,-10.,],[1.,15.,-3.,]])
+color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
 
 # Default light and material parameters.
 ambient = .05
