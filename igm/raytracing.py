@@ -40,7 +40,18 @@ def intersect_sphere(O, D, S, R):
     return np.inf
 
 def intersect_triangle(O, D, P, N):
-    return 0
+    e2 = np.subtract(P[2],P[0])
+    e1 = np.subtract(P[1],P[0])
+    s = np.subtract(O,P[0])
+    p = np.cross(D,e2)
+    a = np.dot(p, e1)
+    f = 1/a
+    u = f * (np.dot(p,s))
+
+    if (u<0) or (u>1):
+        return np.inf
+    
+    return 1.
 
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
