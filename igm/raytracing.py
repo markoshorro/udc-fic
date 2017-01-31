@@ -40,18 +40,57 @@ def intersect_sphere(O, D, S, R):
     return np.inf
 
 def intersect_triangle(O, D, P, N):
+    inters = intersect_plane(0,D,np.array(P[0]),N);
+    if (inters ==np.inf):
+        return inters
     e2 = np.subtract(P[2],P[0])
     e1 = np.subtract(P[1],P[0])
-    s = np.subtract(O,P[0])
-    p = np.cross(D,e2)
-    a = np.dot(p, e1)
-    f = 1/a
-    u = f * (np.dot(p,s))
+    s = np.subtract(O, P[0])
+    p = np.cross(D, e2)
+    u = np.dot(p,s)/np.dot(p, e1)
 
     if (u<0) or (u>1):
         return np.inf
     
     return 1.
+    #Si ya el plano no intersecciona, pues nada
+    #Le pasamos uno de los puntos del triangulo que esta en el plano
+    #inters es el punto de interseccion
+    # inters = intersect_plane(0,D,np.array(P[0]),N);
+    # if (inters ==np.inf):
+    #     return inters
+
+    # #Los vectores de la esquina del triangulo
+    # u = np.subtract(P[1],P[0])
+    # v = np.subtract(P[2],P[0])
+
+    # w0 = O - P[0]
+    # a = -np.dot(N,w0)
+    # b = np.dot(N,D)
+
+    # r = a / b
+    # if (r < 1e-6):
+    #     return np.inf
+
+    # I = O + r*D
+    # uu = np.dot(u,u)
+    # uv = np.dot(u,v)
+    # vv = np.dot(v,v)
+    # w = I - P[0]
+    # wu = np.dot(w,u)
+    # wv = np.dot(w,v)
+    # DD = uv * uv - uu * vv
+
+
+    # s = (uv * wv - vv * wu) / DD
+    # if (s < 1e-6 or s > 1.0):
+    #     return np.inf
+
+    # t = (uv * wu - uu * wv) / DD
+    # if (t < 1e-6 or (s+t) > 1.):
+    #     return np.inf
+
+    # return 1.
 
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
@@ -66,6 +105,8 @@ def get_normal(obj, M):
     if obj['type'] == 'sphere':
         N = normalize(M - obj['position'])
     elif obj['type'] == 'plane':
+        N = obj['normal']
+    elif obj['type'] == 'triangle':
         N = obj['normal']
     return N
     
@@ -121,31 +162,42 @@ def add_plane(position, normal):
 # new geometry
 def add_triangle(v1, v2, v3, color):
     # with the point, we calculate the normal vector
-    u = np.subtract(v3,v1)
-    v = np.subtract(v2,v1)
+    u = np.subtract(v2,v1)
+    v = np.subtract(v3,v1)
     n = np.cross(u,v)
 
     return dict(type='triangle', position=np.array([v1,v2,v3]),
                 color=np.array(color), reflection=.5, normal=n)
 
 def add_triangle_mesh(P, color):
-    mesh = []
-    i = 2
+    mesh = add_triangle(P[0], P[1], P[2], color)
+    i = 3
     
     while i<len(P):
-        mesh = [mesh] + [[add_triangle(P[i], P[i+1], P[i+2], color)]]
+        mesh = mesh, add_triangle(P[i], P[i-1], P[i-2], color)
+        i += 1
     
     return mesh
     
 # List of objects.
 color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
-scene = [add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-         add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+triangles = add_triangle_mesh([[-1.,-0.5,1],[-0.5,0.5,1],[0.,-0.5,1],[0.5,0.5,1]],[0.,1.0,0.])
+scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
+         #add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
          add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
-    ]
+]
 
+if type(triangles)!=dict:
+    for i in triangles:
+        scene += [i]
+else:
+    scene += [triangles]
+        
+
+print scene
+    
 # Light position and color.
 L = np.array([5., 5., -10.])
 color_light = np.ones(3)
