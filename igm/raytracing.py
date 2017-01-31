@@ -69,7 +69,6 @@ def ray_triangle_intersection(ray_near, ray_dir, (v1, v2, v3)):
 
     return t
 
-
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
         return intersect_plane(O, D, obj['position'], obj['normal'])
@@ -83,6 +82,8 @@ def get_normal(obj, M):
     if obj['type'] == 'sphere':
         N = normalize(M - obj['position'])
     elif obj['type'] == 'plane' or obj['type'] == 'triangle':
+        N = obj['normal']
+    elif obj['type'] == 'triangle':
         N = obj['normal']
     return N
     
@@ -174,10 +175,7 @@ if type(triangles)!=dict:
         scene += [i]
 else:
     scene += [triangles]
-        
-
-print scene
-
+    
 # Light position and color.
 L = np.array([[7., 3., -10.],[-8.,7.,-10.,],[1.,15.,-3.,]])
 color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
