@@ -167,42 +167,28 @@ color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
 
 scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-         #add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+         add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
          add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
 ]
 
-# Light position and color.
-L = np.array([[7., 3., -10.]])
-color_light = np.array([np.ones(3)])
-
-add_light = [[-8.,7.,-10.],[1.,15.,-3.]]
-add_light_color = [[1.,0.,0.],[0.,0.,1.]]
-
 P1 = [[-1.,-0.5,1],[-1,0.5,1],[0.,-0.5,1],[0,0.5,1]]
 triangles1 = add_triangle_mesh(P1, [0.,1.0,0.])
 
-P2 = [[0,-0.5,0],[0,0.5,0],[1.,-0.5,0],[1.,0.5,0]]
+P2 = [[0,-0.5,0.5],[0,0.5,0.33],[1.,-0.5,0.16],[1.,0.5,0]]
 triangles2 = add_triangle_mesh(P2, [1.,0.,0.])
 
 # trump's wall
 for i in triangles1:
     scene += [i]
+    
+for i in triangles2:
+    scene += [i]
 
-if (len(sys.argv)>1):
-    if (sys.argv[1] == "-l"):
-        i = 0
-        k = int(sys.argv[2])
-        while i < k:
-            L = np.append(L,add_light[i])
-            color_light = np.append(color_light, add_light_color[i])
-            i += 1
-
-    if (sys.argv[3] == "-w"):
-        if (sys.argv[4] == "2"):
-            for i in triangles2:
-                scene += [i]
-
+# Light position and color.
+L = np.array([[7., 3., -10.],[-8.,7.,-10.],[1.,15.,-3.]])
+color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
+    
 # Default light and material parameters.
 ambient = .05
 diffuse_c = 1.
