@@ -186,8 +186,13 @@ for i in triangles2:
     scene += [i]
 
 # Light position and color.
-L = np.array([[7., 3., -10.],[-8.,7.,-10.],[1.,15.,-3.]])
-color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
+# one light
+L = np.array([[7., 3., -10.]])
+color_light = np.array([np.ones(3)])
+
+# three lights
+#L = np.array([[7., 3., -10.],[-8.,7.,-10.],[1.,15.,-3.]])
+#color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
     
 # Default light and material parameters.
 ambient = .05
