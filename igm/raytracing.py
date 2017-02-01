@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 w = 400
 h = 300
@@ -83,8 +84,6 @@ def get_normal(obj, M):
         N = normalize(M - obj['position'])
     elif obj['type'] == 'plane' or obj['type'] == 'triangle':
         N = obj['normal']
-    elif obj['type'] == 'triangle':
-        N = obj['normal']
     return N
     
 def get_color(obj, M):
@@ -151,11 +150,14 @@ def add_triangle(v1, v2, v3, color):
                 color=np.array(color), reflection=.5, normal=n)
 
 def add_triangle_mesh(P, color):
-    mesh = add_triangle(P[0], P[1], P[2], color)
+    mesh = [add_triangle(P[0], P[1], P[2], color)]
     i = 3
     
     while i<len(P):
-        mesh = mesh, add_triangle(P[i], P[i-1], P[i-2], color)
+        if i%2==0:
+            mesh = mesh + [add_triangle(P[i], P[i-2], P[i-1], color)]
+        else:
+            mesh = mesh + [add_triangle(P[i], P[i-1], P[i-2], color)]
         i += 1
     
     return mesh
@@ -163,22 +165,43 @@ def add_triangle_mesh(P, color):
 # List of objects.
 color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
-triangles = add_triangle_mesh([[-1.,-0.5,1],[-0.5,0.5,1],[0.,-0.5,1],[0.5,0.5,1]],[0.,1.0,0.])
+
 scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
          #add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
          add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
 ]
 
-if type(triangles)!=dict:
-    for i in triangles:
-        scene += [i]
-else:
-    scene += [triangles]
-    
 # Light position and color.
-L = np.array([[7., 3., -10.],[-8.,7.,-10.,],[1.,15.,-3.,]])
-color_light = np.array([np.ones(3),[1.,0.,0.],[0.,0.,1.]])
+L = np.array([[7., 3., -10.]])
+color_light = np.array([np.ones(3)])
+
+add_light = [[-8.,7.,-10.],[1.,15.,-3.]]
+add_light_color = [[1.,0.,0.],[0.,0.,1.]]
+
+P1 = [[-1.,-0.5,1],[-1,0.5,1],[0.,-0.5,1],[0,0.5,1]]
+triangles1 = add_triangle_mesh(P1, [0.,1.0,0.])
+
+P2 = [[0,-0.5,0],[0,0.5,0],[1.,-0.5,0],[1.,0.5,0]]
+triangles2 = add_triangle_mesh(P2, [1.,0.,0.])
+
+# trump's wall
+for i in triangles1:
+    scene += [i]
+
+if (len(sys.argv)>1):
+    if (sys.argv[1] == "-l"):
+        i = 0
+        k = int(sys.argv[2])
+        while i < k:
+            L = np.append(L,add_light[i])
+            color_light = np.append(color_light, add_light_color[i])
+            i += 1
+
+    if (sys.argv[3] == "-w"):
+        if (sys.argv[4] == "2"):
+            for i in triangles2:
+                scene += [i]
 
 # Default light and material parameters.
 ambient = .05
